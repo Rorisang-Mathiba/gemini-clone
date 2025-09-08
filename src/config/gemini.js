@@ -1,16 +1,24 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-
 async function main(prompt) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const res = await fetch("/.netlify/functions/gemini", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch from Gemini function");
+    }
+
+    const data = await res.json();
+
+    // If your Netlify function returns structured data, you can extract text here
+    const text =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      JSON.stringify(data, null, 2);
+
     console.log(text);
-    return response.text();
+    return text;
   } catch (error) {
     console.error("Error generating content:", error);
     throw error;
